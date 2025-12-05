@@ -5,6 +5,6 @@ const router = Router();
 
 router.get("/test", BookingController.test);
 router.post("/", BookingController.createBooking);
-// router.get("/", BookingController.);
+router.get("/", BookingController.getAllVehicle);
 
 export const BookingRouter = router;

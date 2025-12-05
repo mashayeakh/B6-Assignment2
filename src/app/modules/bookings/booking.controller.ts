@@ -11,7 +11,7 @@ export const BookingController = {
         try {
             const result = await BookingService.createBooking(req.body);
 
-            res.status(201).json(result)
+            res.status(result.status || 201).json(result)
         } catch (err: any) {
             return {
                 success: false,
@@ -20,7 +20,21 @@ export const BookingController = {
             }
         }
 
-    }
+    },
+
+    async getAllVehicle(req: Request, res: Response) {
+        try {
+            const result = await BookingService.getAllBookings();
+            res.status(200).json(result)
+        } catch (err: any) {
+            return {
+                success: false,
+                message: "Internal Server Error	",
+                statusCode: 500,
+            }
+        }
+    },
+
 
 
 
