@@ -2,12 +2,16 @@ import express from "express";
 import cors from "cors";
 import { UserRouter } from "./app/modules/users/users.routes";
 import { VehicleRouter } from "./app/modules/vehicles/vehicle.routes";
+import { globalErrorHandler } from "./app/middleware/errorHandler";
 
 //express
 const app = express();
 
 //cors
 app.use(cors());
+
+//global error handler
+app.use(globalErrorHandler);
 
 //json
 app.use(express.json());

@@ -3,7 +3,7 @@ import { VehicleController } from "./vehicle.controller";
 
 const router = Router();
 
-// router.get("/", UserController.test);
+router.get("/test", VehicleController.test);
 router.post("/", VehicleController.createVehicle);
 router.get("/", VehicleController.getAllVehicle);
 router.get("/:vehicleId", VehicleController.getVehicleById);

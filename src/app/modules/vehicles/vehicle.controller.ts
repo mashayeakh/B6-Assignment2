@@ -1,14 +1,17 @@
 import { Request, Response } from "express";
 import { VehicleService } from "./vehicle.service";
+import { catchAsync } from "../../utils/catchAsync";
+
 
 
 
 
 export const VehicleController = {
-    async test(req: Request, res: Response) {
+
+    test: catchAsync(async (req, res) => {
         const result = await VehicleService.test();
         res.status(result.statusCode).json(result)
-    },
+    }),
 
     async createVehicle(req: Request, res: Response) {
         try {
