@@ -7,5 +7,6 @@ const router = Router();
 router.post("/", VehicleController.createVehicle);
 router.get("/", VehicleController.getAllVehicle);
 router.get("/:vehicleId", VehicleController.getVehicleById);
+router.put("/:vehicleId", VehicleController.updateVehicle);
 
 export const VehicleRouter = router;

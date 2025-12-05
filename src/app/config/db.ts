@@ -45,23 +45,23 @@ const userTable = `
         CHECK (LENGTH(password)>=6)
     )`
 
+
+
 const vehicleTable = `
-        CREATE TABLE IF NOT EXISTS Vehicles(
+    CREATE TABLE IF NOT EXISTS Vehicles(
+    id SERIAL PRIMARY KEY,
+    vehicle_name VARCHAR(200) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    registration_number VARCHAR(50) UNIQUE NOT NULL,
+    daily_rent_price NUMERIC(10, 2) NOT NULL,
+    availability_status VARCHAR(20) NOT NULL,
 
-        id SERIAL PRIMARY KEY,
-        vehicle_name VARCHAR(200) NOT NULL,
-        type VARCHAR(20),
-        registration_number VARCHAR(50) UNIQUE NOT NULL,
-        daily_rent_price NUMERIC(10,2) NOT NULL,
-        availability_status VARCHAR(20) NOT NULL,
 
-        create_at TIMESTAMP DEFAULT NOW(),
-        update_at TIMESTAMP DEFAULT NOW(),
-
-        -- checks
-        CHECK (daily_rent_price > 0)
-    )`
-
+    CONSTRAINT price_positive_check CHECK(daily_rent_price > 0),
+    CONSTRAINT vehicle_type_check CHECK(type IN('car', 'bike', 'van', 'SUV')),
+    CONSTRAINT status_check CHECK (availability_status IN ('available','booked'))
+)
+    `;
 
 
 export const initiateDB = async () => {
