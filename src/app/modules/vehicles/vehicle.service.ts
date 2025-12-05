@@ -160,12 +160,21 @@ export const VehicleService = {
 
         const existingVehicle = await pool.query(`SELECT * FROM Vehicles WHERE id=$1`, [vehicleId])
 
+        if (existingVehicle.rowCount === 0) {
+            return {
+                success: false,
+                message: "Vehicle not found",
+                statusCode: 404
+            }
+        }
+
         //merge for optional fields
         const updatedVehicle = {
             ...existingVehicle.rows[0],
             ...payload
         }
 
+        console.log("Updated Vehicle ", updatedVehicle)
 
         const {
             vehicle_name,
@@ -192,7 +201,28 @@ export const VehicleService = {
         return {
             success: true,
             message: "upated!!!",
+            data: result.rows[0]
+        }
+    },
+
+    //delete vehicle by id
+    async deleteVehicle(vehicleId: number) {
+        const result = await pool.query(
+            `DELETE FROM Vehicles WHERE id=$1`, [vehicleId]
+        )
+        console.log("RESULT--> ", result)
+
+        if (result.rowCount === 0) {
+            return {
+                success: false,
+                message: "Vehicle not found",
+                statusCode: 404
+            }
         }
 
+        return {
+            success: true,
+            message: "Vehicle deleted successfully",
+        }
     }
 }
