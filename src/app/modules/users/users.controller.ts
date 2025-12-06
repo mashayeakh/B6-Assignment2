@@ -19,7 +19,6 @@ export const UserController = {
                 statusCode: 500,
             }
         }
-
     }
 
 

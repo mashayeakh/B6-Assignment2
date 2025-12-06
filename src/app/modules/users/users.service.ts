@@ -28,7 +28,6 @@ export const UserService = {
                     success: false,
                     message: "Bad Request",
                     // data: insertion.rows[0],
-
                     statusCode: 400,
                 }
             }

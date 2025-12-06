@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS users(
     role VARCHAR(50) NOT NULL,
 
     CONSTRAINT email_lowercase_check CHECK (email = LOWER(email)),
-    CHECK (LENGTH(password) >= 6),
+    CONSTRAINT users_password_check CHECK (LENGTH(password) >= 6),
     CONSTRAINT role_check CHECK(role IN('admin', 'customer'))
 );
 `;
