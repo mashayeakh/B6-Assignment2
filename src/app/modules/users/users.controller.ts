@@ -19,6 +19,11 @@ export const UserController = {
                 statusCode: 500,
             }
         }
+    },
+
+    async getAllUsers(req: Request, res: Response) {
+        const users = await UserService.getAllUser();
+        res.status(200).json(users)
     }
 
 

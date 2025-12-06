@@ -73,8 +73,19 @@ export const UserService = {
                 message: error.message || "Something went wrong"
             }
         }
+    },
+
+    async getAllUser() {
+        const result = await pool.query(
+            `SELECT * FROM users`
+        )
+
+        return {
+            success: true,
+            message: "fetched everything",
+            data: result.rows,
+        }
     }
 
-    
 }
 

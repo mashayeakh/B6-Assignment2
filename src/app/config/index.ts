@@ -14,6 +14,7 @@ dotenv.config({
 export const config = {
     connection_string: process.env.CONNECTION_STRING,
     port: process.env.port,
+    jwtSecret:process.env.JWT_SECRET
 }
 
 // console.log({ "config.port": config.port })
