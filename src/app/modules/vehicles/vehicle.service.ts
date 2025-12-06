@@ -9,7 +9,7 @@ export const VehicleService = {
         }
     },
 
-    //create vehicle
+    //create vehicle - admin access
     async createVehicle(payload: any) {
         try {
 

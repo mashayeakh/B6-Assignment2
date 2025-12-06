@@ -6,6 +6,7 @@ const router = Router();
 
 // router.get("/", UserController.test);
 router.post("/", UserController.createUser);
-router.get("/", UserController.getAllUsers);
+router.get("/", AuthMiddleware.auth("admin"), UserController.getAllUsers);
+router.delete("/:id", AuthMiddleware.auth("admin"), UserController.deleteUser);
 
 export const UserRouter = router;

@@ -49,7 +49,7 @@ export const AuthService = {
                 console.log(fromDB.name)
 
                 //discarding the password
-                const { password: _password, ...withoutPwd } = fromDB;
+                const { password: _password, ...withoutPsw } = fromDB;
 
                 // console.log("data ", withourPwd)
                 // console.log("data ", _password)
@@ -57,7 +57,7 @@ export const AuthService = {
                 return {
                     success: true,
                     message: "User created successfully",
-                    data: withoutPwd
+                    data: withoutPsw
                 }
             }
 
@@ -124,6 +124,7 @@ export const AuthService = {
                 //create the token
                 const token = jwt.sign(
                     {
+                        id: user.id,
                         name: user.name,
                         email: user.email,
                         role: user.role,

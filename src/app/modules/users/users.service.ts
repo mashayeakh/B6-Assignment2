@@ -75,17 +75,36 @@ export const UserService = {
         }
     },
 
+    //get all user - admin access
     async getAllUser() {
         const result = await pool.query(
             `SELECT * FROM users`
         )
 
+
+        const data = result.rows;
+        const finalVal = data.map((val) => {
+            const { password, ...withoutPsw } = val
+            return withoutPsw;
+        })
+
+        // console.log("F", final)
+
         return {
             success: true,
-            message: "fetched everything",
-            data: result.rows,
+            message: "Users retrieved successfully",
+            data: finalVal,
+        }
+    },
+
+    //delete user using id - admin access
+    async deleteUser(id: number) {
+        const result = await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
+        return {
+            success: true,
+            message: "User deleted successfully"
         }
     }
-
 }
+
 

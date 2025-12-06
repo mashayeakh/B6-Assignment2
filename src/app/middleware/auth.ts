@@ -11,7 +11,6 @@ export const AuthMiddleware = {
             try {
                 //how to get the 
                 const authHeader = req.headers.authorization;
-                console.log("Token from header ", authHeader)
 
                 //if you have no token then you cant access to the routes
                 if (!authHeader) {

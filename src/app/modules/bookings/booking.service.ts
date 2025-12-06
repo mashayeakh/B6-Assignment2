@@ -1,4 +1,6 @@
+import { Request, Response } from "express";
 import { pool } from "../../config/db";
+import { AuthMiddleware } from "../../middleware/auth";
 
 export const BookingService = {
     async test() {
@@ -130,34 +132,180 @@ export const BookingService = {
     },
 
     //get all booking
-    async getAllBookings() {
-        //depending on the role users can see two types of json. adming and customer
+    // async getAllBookings() {
+    //     //depending on the role users can see two types of json. adming and customer
 
+    //     try {
+    //         const bookingResult = await pool.query(`SELECT * FROM bookings`)
+    //         // console.log("REsulst", result)
+
+    //         if (bookingResult.rows.length === 0) {
+    //             return {
+    //                 success: true,
+    //                 message: "No bookings found",
+    //                 data: []
+    //             }
+    //         }
+
+    //         //customer query
+    //         const cutomerQ = await pool.query(`SELECT 
+    //                         u.name AS name,
+    //                         u.email AS email
+    //                         FROM bookings b
+    //                         JOIN users u ON b.customer_id = u.id;
+    //                     `);
+
+    //         console.log("Custo------ ", cutomerQ)
+    //         console.log("Custo------ ", cutomerQ.rowCount)
+
+    //         //vehicle query
+    //         const vehicleQ = await pool.query(`SELECT
+    //                         v.vehicle_name AS vehicle_name,
+    //                         v.registration_number AS registration_number
+    //                         FROM vehicles v 
+    //                         JOIN bookings b ON b.vehicle_id = v.id
+
+    //             `)
+
+    //         console.log("VehicleQ------ ", vehicleQ)
+    //         console.log("VehicleQ------ ", vehicleQ.rowCount)
+
+    //         //lets grab the role base
+
+    //         const admin = await pool.query(`SELECT * FROM users where role=$1`, ["admin"])
+
+    //         const customer = await pool.query(`SELECT * FROM users where role=$1`, ["customer"])
+
+    //         //admin view
+    //         const value = {
+    //             ...bookingResult.rows,
+    //             ...cutomerQ
+    //         }
+
+    //         console.log("Admin view ", value)
+
+    //         return {
+    //             "success": true,
+    //             "message": "Bookings retrieved successfully",
+    //             "data": value,
+    //         }
+
+
+
+
+
+    //         return {
+    //             "success": true,
+    //             "message": "Bookings retrieved successfully",
+    //             "data": bookingResult.rows,
+    //         }
+    //     } catch (error: any) {
+    //         return {
+    //             success: false,
+    //             statusCode: 400,
+    //             message: error.message || "Something went wrong"
+    //         }
+    //     }
+    // },
+
+    async getAllBookings(req: Request, res: Response) {
         try {
-            const result = await pool.query(`SELECT * FROM bookings`)
-            // console.log("REsulst", result)
+            // Check user role from JWT
+            const userRole = req.user?.role;
+            const userId = req.user?.id;
 
-            if (result.rows.length === 0) {
-                return {
+            if (!userRole || !userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Unauthorized access"
+                });
+            }
+
+            if (userRole === "customer") {
+                // Customer view: only their bookings
+                const bookingsResult = await pool.query(
+                    `SELECT 
+                    b.id, b.vehicle_id, b.rent_start_date, b.rent_end_date, b.total_price, b.status,
+                    v.vehicle_name, v.registration_number, v.type AS vehicle_type
+                 FROM bookings b
+                 JOIN vehicles v ON b.vehicle_id = v.id
+                 WHERE b.customer_id = $1`,
+                    [userId]
+                );
+
+                const data = bookingsResult.rows.map(row => ({
+                    id: row.id,
+                    vehicle_id: row.vehicle_id,
+                    rent_start_date: row.rent_start_date,
+                    rent_end_date: row.rent_end_date,
+                    total_price: row.total_price,
+                    status: row.status,
+                    vehicle: {
+                        vehicle_name: row.vehicle_name,
+                        registration_number: row.registration_number,
+                        type: row.vehicle_type
+                    }
+                }));
+
+                return res.status(200).json({
                     success: true,
-                    message: "No bookings found",
-                    data: []
-                }
+                    message: "Your bookings retrieved successfully",
+                    data
+                });
+            } else if (userRole === "admin") {
+                // Admin view: all bookings
+                const bookingsResult = await pool.query(
+                    `SELECT 
+                    b.id, b.customer_id, b.vehicle_id, b.rent_start_date, b.rent_end_date, b.total_price, b.status,
+                    u.name AS customer_name, u.email AS customer_email, u.role AS customer_role,
+                    v.vehicle_name, v.registration_number, v.type AS vehicle_type
+                 FROM bookings b
+                 JOIN users u ON b.customer_id = u.id
+                 JOIN vehicles v ON b.vehicle_id = v.id`
+                );
+
+                const data = bookingsResult.rows.map(row => ({
+                    id: row.id,
+                    customer_id: row.customer_id,
+                    vehicle_id: row.vehicle_id,
+                    rent_start_date: row.rent_start_date,
+                    rent_end_date: row.rent_end_date,
+                    total_price: row.total_price,
+                    status: row.status,
+                    customer: {
+                        name: row.customer_name,
+                        email: row.customer_email,
+                        role: row.customer_role
+                    },
+                    vehicle: {
+                        vehicle_name: row.vehicle_name,
+                        registration_number: row.registration_number,
+                        type: row.vehicle_type
+                    }
+                }));
+
+                return res.status(200).json({
+                    success: true,
+                    message: "All bookings retrieved successfully",
+                    data
+                });
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    message: "Role not authorized"
+                });
             }
 
-            return {
-                "success": true,
-                "message": "Bookings retrieved successfully",
-                "data": result.rows,
-            }
         } catch (error: any) {
-            return {
+            console.error("Error fetching bookings:", error);
+            return res.status(500).json({
                 success: false,
-                statusCode: 400,
                 message: error.message || "Something went wrong"
-            }
+            });
         }
-    },
+    }
+
+
 
 
 

@@ -24,7 +24,7 @@ export const BookingController = {
 
     async getAllVehicle(req: Request, res: Response) {
         try {
-            const result = await BookingService.getAllBookings();
+            const result = await BookingService.getAllBookings(req, res);
             res.status(200).json(result)
         } catch (err: any) {
             return {
