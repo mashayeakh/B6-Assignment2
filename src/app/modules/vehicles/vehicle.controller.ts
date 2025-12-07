@@ -8,104 +8,39 @@ import { catchAsync } from "../../middleware/catchAsync";
 
 export const VehicleController = {
 
+    //create vehicle
     createVehicle: catchAsync(async (req, res) => {
         const result = await VehicleService.createVehicle(req.body);
         res.status(201).json(result);
     }),
 
-    // async createVehicle(req: Request, res: Response) {
-    //     try {
-    //         const result = await VehicleService.createVehicle(req.body);
 
-    //         res.status(201).json(result)
-    //     } catch (err: any) {
-    //         return {
-    //             success: false,
-    //             message: "Internal Server Error	",
-    //             statusCode: 500,
-    //         }
-    //     }
-    // },
-
-
+    //get all vehicle
     getAllVehicle: catchAsync(async (req, res) => {
         const result = await VehicleService.getAllVehicles();
         res.status(200).json(result)
     }),
 
 
-    // async getAllVehicle(req: Request, res: Response) {
-    //     try {
-    //         const result = await VehicleService.getAllVehicles();
-    //         res.status(200).json(result)
-    //     } catch (err: any) {
-    //         return {
-    //             success: false,
-    //             message: "Internal Server Error	",
-    //             statusCode: 500,
-    //         }
-    //     }
-    // },
-
-
+    //get vehicle by id
     getVehicleById: catchAsync(async (req, res) => {
         const result = await VehicleService.getVehicleById(Number(req.params.vehicleId));
         res.status(200).json(result)
     }),
 
 
-    // async getVehicleById(req: Request, res: Response) {
-    //     try {
-
-    //         const result = await VehicleService.getVehicleById(Number(req.params.vehicleId));
-    //         res.status(200).json(result)
-
-    //     } catch (err: any) {
-    //         return {
-    //             success: false,
-    //             message: "Internal Server Error	",
-    //             statusCode: 500,
-    //         }
-    //     }
-    // },
-
-
+    //update vehicle
     updateVehicle: catchAsync(async (req, res) => {
         const result = await VehicleService.updateVehicle(Number(req.params.vehicleId), req.body);
         res.status(200).json(result)
     }),
 
-    // async updateVehicle(req: Request, res: Response) {
-    //     try {
-    //         const result = await VehicleService.updateVehicle(Number(req.params.vehicleId), req.body);
-    //         res.status(200).json(result)
-    //     } catch (err: any) {
-    //         return {
-    //             success: false,
-    //             message: "Internal Server Error	",
-    //             statusCode: 500,
-    //         }
-    //     }
-    // },
-
+    //delete vehicle
     deleteVehicle: catchAsync(async (req, res) => {
         const result = await VehicleService.deleteVehicle(Number(req.params.vehicleId));
         res.status(200).json(result)
     }),
 
-    // async deleteVehicle(req: Request, res: Response) {
-    //     try {
-    //         const result = await VehicleService.deleteVehicle(Number(req.params.vehicleId));
-    //         res.status(200).json(result)
-    //     } catch (err: any) {
-    //         return {
-    //             success: false,
-    //             message: "Internal Server Error	",
-    //             statusCode: 500,
-    //         }
-    //     }
-    // }
-
-
+    
 
 }

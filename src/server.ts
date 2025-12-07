@@ -6,11 +6,6 @@ const port = config.port;
 
 //setting db here
 
-app.get('/', (req, res) => {
-    res.send('Hello World!')
-})
-
-
 initiateDB()
     .then(() => {
         app.listen(port, () => {

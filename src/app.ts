@@ -18,6 +18,11 @@ app.use(globalErrorHandler);
 //json
 app.use(express.json());
 
+//root 
+app.get('/', (req, res) => {
+    res.send('🚗 Vehicle Rental System')
+})
+
 //api
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/vehicles", VehicleRouter);

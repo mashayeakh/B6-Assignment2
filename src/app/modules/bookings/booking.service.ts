@@ -199,10 +199,9 @@ export const BookingService = {
                 message: error.message || "Something went wrong"
             });
         }
-    },
+    }, 
 
 
-    //update booking
     //update booking
     async updateBooking(bookingId: number, user: any, payload: any) {
         try {
@@ -218,7 +217,8 @@ export const BookingService = {
             const booking = bookingRes.rows[0];
 
             const today = new Date();
-            today.setHours(0, 0, 0, 0); // Normalize to start of day
+            // Normalize to start of day
+            today.setHours(0, 0, 0, 0); 
 
             const startDate = new Date(booking.rent_start_date);
             startDate.setHours(0, 0, 0, 0);
@@ -253,16 +253,28 @@ export const BookingService = {
             // Customer logic
             if (role === "customer") {
                 if (booking.customer_id !== userId) {
-                    return { success: false, statusCode: 403, message: "You are not authorized to update this booking" };
+                    return { 
+                        success: false, 
+                        statusCode: 403, 
+                        message: "You are not authorized to update this booking" 
+                    };
                 }
 
                 if (newStatus !== "cancelled") {
-                    return { success: false, statusCode: 400, message: "Invalid status update for customer" };
+                    return { 
+                        success: false, 
+                        statusCode: 400, 
+                        message: "Invalid status update for customer" 
+                    };
                 }
 
                 // Customer can only cancel BEFORE the start date
                 if (today >= startDate) {
-                    return { success: false, statusCode: 400, message: "Cannot cancel booking on or after start date" };
+                    return { 
+                        success: false, 
+                        statusCode: 400, 
+                        message: "Cannot cancel booking on or after start date" 
+                    };
                 }
 
                 const updatedBooking = await pool.query(
@@ -281,12 +293,20 @@ export const BookingService = {
             // Admin logic
             if (role === "admin") {
                 if (newStatus !== "returned") {
-                    return { success: false, statusCode: 400, message: "Invalid status update for admin" };
+                    return { 
+                        success: false, 
+                        statusCode: 400, 
+                        message: "Invalid status update for admin" 
+                    };
                 }
 
                 // Admin can only mark as returned ON or AFTER the end date
                 if (today < endDate) {
-                    return { success: false, statusCode: 400, message: "Cannot mark as returned before rental end date" };
+                    return { 
+                        success: false, 
+                        statusCode: 400, 
+                        message: "Cannot mark as returned before rental end date" 
+                    };
                 }
 
                 const updatedBooking = await pool.query(
@@ -309,17 +329,18 @@ export const BookingService = {
                 }
             }
 
-            return { success: false, statusCode: 403, message: "You are not allowed to perform this action" };
+            return { 
+                success: false, 
+                statusCode: 403, 
+                message: "You are not allowed to perform this action" 
+            };
 
         } catch (error: any) {
-            return { success: false, statusCode: 500, message: error.message || "Something went wrong" };
+            return { 
+                success: false, 
+                statusCode: 500, message: error.message || "Something went wrong" 
+            };
         }
     }
-
-
-
-
-
-
 
 }

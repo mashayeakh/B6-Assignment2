@@ -88,7 +88,6 @@ export const VehicleService = {
 
         try {
             const result = await pool.query(`SELECT * FROM Vehicles`)
-            // console.log("REsulst", result)
 
             if (result.rows.length === 0) {
                 return {
@@ -121,7 +120,6 @@ export const VehicleService = {
             SELECT * FROM Vehicles WHERE id=$1
             `, [vehicleId]
             )
-            // console.log(result.rows[0].id)
 
             if (result.rows.length === 0) {
                 return {
@@ -149,7 +147,6 @@ export const VehicleService = {
     //update vehicle
     async updateVehicle(vehicleId: number, payload: any) {
 
-        // const existingVehicle = this.getVehicleById(vehicleId)
 
         const existingVehicle = await pool.query(`SELECT * FROM Vehicles WHERE id=$1`, [vehicleId])
 
@@ -167,7 +164,6 @@ export const VehicleService = {
             ...payload
         }
 
-        console.log("Updated Vehicle ", updatedVehicle)
 
         const {
             vehicle_name,
@@ -176,8 +172,6 @@ export const VehicleService = {
             daily_rent_price,
             availability_status
         } = payload;
-
-        console.log("name", vehicle_name)
 
 
         const result = await pool.query(
@@ -190,7 +184,6 @@ export const VehicleService = {
                 vehicleId]
         )
 
-        console.log("RESULT ", result)
         return {
             success: true,
             message: "Vehicle updated successfully",
@@ -203,7 +196,6 @@ export const VehicleService = {
         const result = await pool.query(
             `DELETE FROM Vehicles WHERE id=$1`, [vehicleId]
         )
-        console.log("RESULT--> ", result)
 
         if (result.rowCount === 0) {
             return {
