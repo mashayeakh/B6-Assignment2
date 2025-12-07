@@ -43,25 +43,14 @@ This is a backend API for a vehicle rental management system, built with a **mod
 
 ### Steps
 ```bash
-# Clone repository
 git clone https://github.com/mashayeakh/B6-Assignment2.git
 cd B6-Assignment2
-
-# Install dependencies
 npm install
-
-# Set up .env file
-# PORT=your_port
-# CONNECTION_STR=your_postgresql_connection_string
-# JWT_SECRET=your_jwt_secret_key
-
-# Build and run
 npm run build
-npm run dev   # development
-npm start     # production
+npm run dev
 ```
 
-> **Note:** Database tables are automatically created on first run.
+> **Note:** Configure `.env` with `PORT`, `CONNECTION_STR`, and `JWT_SECRET`. Database tables are auto-created on first run.
 
 ---
 
@@ -69,24 +58,12 @@ npm start     # production
 
 | Method | Endpoint | Access |
 |--------|----------|--------|
-| **Auth** |
 | POST | `/api/v1/auth/signup` | Public |
 | POST | `/api/v1/auth/signin` | Public |
-| **Users** |
 | GET | `/api/v1/users/` | Admin |
-| PUT | `/api/v1/users/:userId` | Admin/Customer |
-| DELETE | `/api/v1/users/:userId` | Admin |
-| **Vehicles** |
 | POST | `/api/v1/vehicles/` | Admin |
 | GET | `/api/v1/vehicles/` | Public |
-| GET | `/api/v1/vehicles/:vehicleId` | Public |
-| PUT | `/api/v1/vehicles/:vehicleId` | Admin |
-| DELETE | `/api/v1/vehicles/:vehicleId` | Admin |
-| **Bookings** |
 | POST | `/api/v1/bookings/` | Admin/Customer |
-| GET | `/api/v1/bookings/` | Admin/Customer |
-| PUT | `/api/v1/bookings/:bookingId` | Admin/Customer |
-| DELETE | `/api/v1/bookings/:bookingId` | Admin |
 
 ---
 
@@ -94,22 +71,22 @@ npm start     # production
 
 ```
 src/
- ├─ app/
- │   └─ auth/         # Authentication module
+ ├─ app/auth/
  ├─ modules/
- │   ├─ bookings/     # Booking module
- │   ├─ users/        # User module
- │   └─ vehicles/     # Vehicle module
- ├─ config/           # Database & environment
- ├─ middleware/       # Auth, validation, error handling
- └─ types/            # TypeScript definitions
-dist/                 # Compiled files
+ │   ├─ bookings/
+ │   ├─ users/
+ │   └─ vehicles/
+ ├─ config/
+ ├─ middleware/
+ └─ types/
+dist/
 ```
 
 ---
 
 ## 📚 Resources
 
-- **GitHub:** [mashayeakh/B6-Assignment2](https://github.com/mashayeakh/B6-Assignment2)
+- **GitHub:** [B6-Assignment2](https://github.com/mashayeakh/B6-Assignment2)
 - **Live Demo:** [rentalsystem-lilac.vercel.app](https://rentalsystem-lilac.vercel.app/)
 
+_Developed by Md Masyeakh Islam Prodhan_
