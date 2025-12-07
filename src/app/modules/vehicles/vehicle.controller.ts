@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { VehicleService } from "./vehicle.service";
-import { catchAsync } from "../../utils/catchAsync";
+import { catchAsync } from "../../middleware/catchAsync";
 
 
 

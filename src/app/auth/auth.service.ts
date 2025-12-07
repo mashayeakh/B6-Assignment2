@@ -56,7 +56,7 @@ export const AuthService = {
 
                 return {
                     success: true,
-                    message: "User created successfully",
+                    message: "User registered successfully",
                     data: withoutPsw
                 }
             }
@@ -134,14 +134,14 @@ export const AuthService = {
                 }
                 );
 
-                // console.log("Token created ", token)
+                const { password: _password, ...withoutPsw } = user;
+
 
                 return {
                     success: true,
-                    message: "Email found",
+                    message: "Login successful",
                     token: token,
-                    user: user,
-                    statusCode: 200,
+                    user: withoutPsw,
                 }
             }
 

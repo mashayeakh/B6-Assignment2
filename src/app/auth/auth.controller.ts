@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { AuthService } from "./auth.service";
+import { catchAsync } from "../middleware/catchAsync";
 
 export const AuthController = {
     async test(req: Request, res: Response) {
@@ -8,16 +9,29 @@ export const AuthController = {
     },
 
     //signup
-    async signup(req: Request, res: Response) {
+
+    signup: catchAsync(async (req, res) => {
         const result = await AuthService.userSignup(req.body);
         res.status(result.statusCode || 201).json(result);
-    },
+    }),
+
+    // async signup(req: Request, res: Response) {
+    //     const result = await AuthService.userSignup(req.body);
+    //     res.status(result.statusCode || 201).json(result);
+    // },
 
     //singin 
-    async signin(req: Request, res: Response) {
+
+    signin: catchAsync(async (req, res) => {
         const { email, password } = req.body;
         const result = await AuthService.userSignin(email, password);
         res.status(200).json(result);
-    }
+    }),
+
+    // async signin(req: Request, res: Response) {
+    //     const { email, password } = req.body;
+    //     const result = await AuthService.userSignin(email, password);
+    //     res.status(200).json(result);
+    // }
 
 }

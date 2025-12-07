@@ -10,7 +10,6 @@ export const UserService = {
     },
 
 
-
     //get all user - admin access
     async getAllUser() {
         const result = await pool.query(
@@ -72,7 +71,17 @@ export const UserService = {
 
     //delete user using id - admin access
     async deleteUser(id: number) {
+
         const result = await pool.query(`DELETE FROM users WHERE id=$1`, [id]);
+
+        if (result.rowCount === 0) {
+            return {
+                success: false,
+                message: "User not found",
+                statusCode: 404
+            }
+        }
+        
         return {
             success: true,
             message: "User deleted successfully"

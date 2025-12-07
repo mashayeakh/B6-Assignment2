@@ -10,11 +10,11 @@ const router = Router();
 
 
 
-router.get("/", AuthMiddleware.auth("admin"), UserController.getAllUsers);
+router.get("/", AuthMiddleware.auth("admin"), UserController.getAllUsers);//admin access
 
-router.put("/:userId", AuthMiddleware.auth("admin", "customer"), UserController.updateUser);
+router.put("/:userId", AuthMiddleware.auth("admin", "customer"), UserController.updateUser); // admin or customer access
 
-router.delete("/:userId", AuthMiddleware.auth("admin"), UserController.deleteUser);
+router.delete("/:userId", AuthMiddleware.auth("admin"), UserController.deleteUser);//admin access
 
 
 export const UserRouter = router;

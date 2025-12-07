@@ -200,7 +200,7 @@ export const VehicleService = {
         console.log("RESULT ", result)
         return {
             success: true,
-            message: "upated!!!",
+            message: "Vehicle updated successfully",
             data: result.rows[0]
         }
     },
