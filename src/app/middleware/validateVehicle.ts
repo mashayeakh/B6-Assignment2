@@ -1,6 +1,8 @@
 export const validateVehicle = (payload: any) => {
     const { vehicle_name, type, registration_number, daily_rent_price, availability_status } = payload;
 
+    //custom msg for each one of them.
+
     if (!vehicle_name || vehicle_name.trim().length === 0) {
         return { success: false, message: "Vehicle name is required", statusCode: 400 };
     }

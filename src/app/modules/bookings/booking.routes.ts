@@ -7,9 +7,9 @@ const router = Router();
 
 router.post("/", AuthMiddleware.auth("admin", "customer"), BookingController.createBooking);//admin or customer
 
-router.get("/", AuthMiddleware.auth("admin", "customer"), BookingController.getAllVehicle); //both roles
+router.get("/", AuthMiddleware.auth("admin", "customer"), BookingController.getAllBooking); //both roles
 
-router.put("/:bookingId", AuthMiddleware.auth("customer", "admin"), BookingController.updateVehicle); //both roles
+router.put("/:bookingId", AuthMiddleware.auth("customer", "admin"), BookingController.updateBooking); //both roles
 
 
 export const BookingRouter = router;

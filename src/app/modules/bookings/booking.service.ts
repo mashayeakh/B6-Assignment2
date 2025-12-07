@@ -3,105 +3,57 @@ import { pool } from "../../config/db";
 import { AuthMiddleware } from "../../middleware/auth";
 
 export const BookingService = {
-    async test() {
-        return {
-            success: "true",
-            message: "hello, from booking service",
-            statusCode: 200
-        }
-    },
 
     //create booking
     async createBooking(payload: any) {
-
         try {
             const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
-
-            console.log("Payload data ", payload);
 
             // Calculate number of days
             const startDate = new Date(rent_start_date);
             const endDate = new Date(rent_end_date);
-
             const diffTime = endDate.getTime() - startDate.getTime();
-            const numOfDays = diffTime / (1000 * 60 * 60 * 24);
+            const numOfDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (numOfDays <= 0) {
-                throw new Error("End date must be after start date");
+                return {
+                    success: false,
+                    statusCode: 400,
+                    message: "End date must be after start date"
+                };
             }
-
-            console.log("Days:", numOfDays);
 
             const formattedStartDate = startDate.toISOString().split("T")[0];
             const formattedEndDate = endDate.toISOString().split("T")[0];
 
-
             // Retrieve vehicle info
-            const result = await pool.query(
+            const vehicleResult = await pool.query(
                 `SELECT vehicle_name, daily_rent_price FROM vehicles WHERE id = $1`,
                 [vehicle_id]
             );
-
-            if (result.rowCount === 0) {
-                return {
-                    success: false,
-                    status: 404,
-                    message: "Vehicle id does not exist"
-                }
+            if (vehicleResult.rowCount === 0) {
+                return { success: false, statusCode: 404, message: "Vehicle id does not exist" };
             }
 
-            //custom check for customer id
-            const customerIdCheck = await pool.query(
-                `SELECT id FROM users WHERE id = $1`,
-                [customer_id]
-            );
-
-            if (customerIdCheck.rowCount === 0) {
-                return {
-                    success: false,
-                    status: 404,
-                    message: "Customer id does not exist"
-                }
+            // Check customer id
+            const customerCheck = await pool.query(`SELECT id FROM users WHERE id = $1`, [customer_id]);
+            if (customerCheck.rowCount === 0) {
+                return { success: false, statusCode: 404, message: "Customer id does not exist" };
             }
 
-            const vehicleRow = result.rows[0];
-            const dailyRentPrice = parseFloat(vehicleRow.daily_rent_price);
+            const vehicleRow = vehicleResult.rows[0];
+            const dailyRentPrice = Number(vehicleRow.daily_rent_price);
 
-            console.log("Daily Rent Price:", dailyRentPrice);
-
-            // Calculate total price
             const total_price = dailyRentPrice * numOfDays;
-            console.log("Total Price:", total_price);
 
-            // Create booking
             const bookingQuery = await pool.query(
-                `
-        INSERT INTO bookings(
-            customer_id,
-            vehicle_id,
-            rent_start_date,
-            rent_end_date,
-            total_price,
-            status
-        )
-        VALUES ($1, $2, $3, $4, $5, 'active')
-        RETURNING *
-        `,
-                [
-                    customer_id,
-                    vehicle_id,
-                    rent_start_date,
-                    rent_end_date,
-                    total_price,
-                ]
+                `INSERT INTO bookings (customer_id, vehicle_id, rent_start_date, rent_end_date, total_price, status)
+             VALUES ($1, $2, $3, $4, $5, 'active') RETURNING *`,
+                [customer_id, vehicle_id, rent_start_date, rent_end_date, total_price]
             );
-
-            console.log("Que", bookingQuery)
-
 
             const booking = bookingQuery.rows[0];
 
-            // Build final response shape
             const responseData = {
                 id: booking.id,
                 customer_id: booking.customer_id,
@@ -118,96 +70,24 @@ export const BookingService = {
 
             return {
                 success: true,
+                statusCode: 201,
                 message: "Booking created successfully",
                 data: responseData
             };
+
         } catch (error: any) {
             return {
                 success: false,
                 statusCode: 500,
                 message: error.message || "Something went wrong"
-            }
+            };
         }
-
     },
 
+
+
+
     //get all booking
-    // async getAllBookings() {
-    //     //depending on the role users can see two types of json. adming and customer
-
-    //     try {
-    //         const bookingResult = await pool.query(`SELECT * FROM bookings`)
-    //         // console.log("REsulst", result)
-
-    //         if (bookingResult.rows.length === 0) {
-    //             return {
-    //                 success: true,
-    //                 message: "No bookings found",
-    //                 data: []
-    //             }
-    //         }
-
-    //         //customer query
-    //         const cutomerQ = await pool.query(`SELECT 
-    //                         u.name AS name,
-    //                         u.email AS email
-    //                         FROM bookings b
-    //                         JOIN users u ON b.customer_id = u.id;
-    //                     `);
-
-    //         console.log("Custo------ ", cutomerQ)
-    //         console.log("Custo------ ", cutomerQ.rowCount)
-
-    //         //vehicle query
-    //         const vehicleQ = await pool.query(`SELECT
-    //                         v.vehicle_name AS vehicle_name,
-    //                         v.registration_number AS registration_number
-    //                         FROM vehicles v 
-    //                         JOIN bookings b ON b.vehicle_id = v.id
-
-    //             `)
-
-    //         console.log("VehicleQ------ ", vehicleQ)
-    //         console.log("VehicleQ------ ", vehicleQ.rowCount)
-
-    //         //lets grab the role base
-
-    //         const admin = await pool.query(`SELECT * FROM users where role=$1`, ["admin"])
-
-    //         const customer = await pool.query(`SELECT * FROM users where role=$1`, ["customer"])
-
-    //         //admin view
-    //         const value = {
-    //             ...bookingResult.rows,
-    //             ...cutomerQ
-    //         }
-
-    //         console.log("Admin view ", value)
-
-    //         return {
-    //             "success": true,
-    //             "message": "Bookings retrieved successfully",
-    //             "data": value,
-    //         }
-
-
-
-
-
-    //         return {
-    //             "success": true,
-    //             "message": "Bookings retrieved successfully",
-    //             "data": bookingResult.rows,
-    //         }
-    //     } catch (error: any) {
-    //         return {
-    //             success: false,
-    //             statusCode: 400,
-    //             message: error.message || "Something went wrong"
-    //         }
-    //     }
-    // },
-
     async getAllBookings(req: Request, res: Response) {
         try {
             const userRole = req.user?.role;
@@ -220,7 +100,7 @@ export const BookingService = {
                 });
             }
 
-            // CUSTOMER VIEW
+            // customer view
             if (userRole === "customer") {
                 const bookingsResult = await pool.query(
                     `SELECT 
@@ -260,7 +140,7 @@ export const BookingService = {
                 });
             }
 
-            // ADMIN VIEW
+            // Admin View
             if (userRole === "admin") {
                 const bookingsResult = await pool.query(
                     `SELECT 
@@ -322,154 +202,124 @@ export const BookingService = {
     },
 
 
-
+    //update booking
+    //update booking
     async updateBooking(bookingId: number, user: any, payload: any) {
-        const client = await pool.connect();
-
         try {
             const role = user?.role?.toLowerCase();
             const newStatus = payload?.status;
             const userId = user?.id;
 
-            // 1. Get booking
-            const bookingRes = await client.query(
-                `SELECT * FROM bookings WHERE id=$1`,
-                [bookingId]
-            );
-
+            const bookingRes = await pool.query(`SELECT * FROM bookings WHERE id=$1`, [bookingId]);
             if (!bookingRes.rows.length) {
-                return {
-                    success: false,
-                    message: "Booking not found"
-                };
+                return { success: false, statusCode: 404, message: "Booking not found" };
             }
 
             const booking = bookingRes.rows[0];
 
-            const currDate = new Date();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize to start of day
+
             const startDate = new Date(booking.rent_start_date);
+            startDate.setHours(0, 0, 0, 0);
+
             const endDate = new Date(booking.rent_end_date);
+            endDate.setHours(0, 0, 0, 0);
 
-            // -----------------------------------------------------------
-            // AUTO-RETURN LOGIC (System)
-            // -----------------------------------------------------------
-            if (currDate >= endDate && booking.status !== "returned") {
-                const updatedBooking = await client.query(
-                    `UPDATE bookings SET status='returned' WHERE id=$1 RETURNING *`,
-                    [bookingId]
-                );
+            // System auto-mark as returned when period ends (for all roles except customer cancellation)
+            if (!(role === "customer" && newStatus === "cancelled")) {
+                if (today > endDate && booking.status !== "returned") {
+                    const updatedBooking = await pool.query(
+                        `UPDATE bookings SET status='returned' WHERE id=$1 RETURNING *`,
+                        [bookingId]
+                    );
+                    await pool.query(
+                        `UPDATE vehicles SET availability_status='available' WHERE id=$1`,
+                        [booking.vehicle_id]
+                    );
 
-                await client.query(
-                    `UPDATE vehicles SET availability_status='available' WHERE id=$1`,
-                    [booking.vehicle_id]
-                );
-
-                return {
-                    success: true,
-                    message: "Booking auto-marked as returned. Vehicle is now available",
-                    data: {
-                        ...updatedBooking.rows[0],
-                        vehicle: {
-                            availability_status: "available"
+                    return {
+                        success: true,
+                        statusCode: 200,
+                        message: "Booking auto-marked as returned. Vehicle is now available",
+                        data: {
+                            ...updatedBooking.rows[0],
+                            vehicle: { availability_status: "available" }
                         }
-                    }
-                };
+                    };
+                }
             }
 
-            // -----------------------------------------------------------
-            // CUSTOMER LOGIC
-            // -----------------------------------------------------------
+            // Customer logic
             if (role === "customer") {
                 if (booking.customer_id !== userId) {
-                    return {
-                        success: false,
-                        message: "You are not authorized to update this booking"
-                    };
+                    return { success: false, statusCode: 403, message: "You are not authorized to update this booking" };
                 }
 
                 if (newStatus !== "cancelled") {
-                    return {
-                        success: false,
-                        message: "Invalid status update for customer"
-                    };
+                    return { success: false, statusCode: 400, message: "Invalid status update for customer" };
                 }
 
-                if (currDate >= startDate) {
-                    return {
-                        success: false,
-                        message: "Cannot cancel booking after start date"
-                    };
+                // Customer can only cancel BEFORE the start date
+                if (today >= startDate) {
+                    return { success: false, statusCode: 400, message: "Cannot cancel booking on or after start date" };
                 }
 
-                const updatedBooking = await client.query(
+                const updatedBooking = await pool.query(
                     `UPDATE bookings SET status='cancelled' WHERE id=$1 RETURNING *`,
                     [bookingId]
                 );
 
                 return {
                     success: true,
+                    statusCode: 200,
                     message: "Booking cancelled successfully",
                     data: updatedBooking.rows[0]
                 };
             }
 
-            // -----------------------------------------------------------
-            // ADMIN LOGIC
-            // -----------------------------------------------------------
+            // Admin logic
             if (role === "admin") {
                 if (newStatus !== "returned") {
-                    return {
-                        success: false,
-                        message: "Invalid status update for admin"
-                    };
+                    return { success: false, statusCode: 400, message: "Invalid status update for admin" };
                 }
 
-                if (currDate < endDate) {
-                    return {
-                        success: false,
-                        message: "Cannot mark as returned before rental end date"
-                    };
+                // Admin can only mark as returned ON or AFTER the end date
+                if (today < endDate) {
+                    return { success: false, statusCode: 400, message: "Cannot mark as returned before rental end date" };
                 }
 
-                const updatedBooking = await client.query(
+                const updatedBooking = await pool.query(
                     `UPDATE bookings SET status='returned' WHERE id=$1 RETURNING *`,
                     [bookingId]
                 );
-
-                await client.query(
+                await pool.query(
                     `UPDATE vehicles SET availability_status='available' WHERE id=$1`,
                     [booking.vehicle_id]
                 );
 
                 return {
                     success: true,
+                    statusCode: 200,
                     message: "Booking marked as returned. Vehicle is now available",
                     data: {
                         ...updatedBooking.rows[0],
-                        vehicle: {
-                            availability_status: "available"
-                        }
+                        vehicle: { availability_status: "available" }
                     }
-                };
+                }
             }
 
-            // -----------------------------------------------------------
-            // NO ROLE MATCH
-            // -----------------------------------------------------------
-            return {
-                success: false,
-                message: "You are not allowed to perform this action"
-            };
+            return { success: false, statusCode: 403, message: "You are not allowed to perform this action" };
 
         } catch (error: any) {
-            return {
-                success: false,
-                message: error.message
-            };
-        } finally {
-            client.release();
+            return { success: false, statusCode: 500, message: error.message || "Something went wrong" };
         }
     }
+
+
+
+
+
 
 
 }

@@ -57,14 +57,13 @@ export const AuthService = {
 
     //signin
     async userSignin(email: string, password: string) {
+
         //check the email
         const foundEmail = await pool.query(
             `SELECT * FROM users WHERE email=$1`, [email]
         )
 
-        console.log("foundEmail", foundEmail.rows[0])
-
-        //if not found
+        //if email not found
         if (foundEmail.rows.length === 0) {
             return {
                 success: false,
@@ -74,14 +73,10 @@ export const AuthService = {
         }
         else {
             const user = foundEmail.rows[0];
-            // console.log(user.password)
 
-            // console.log(password)
-
-            //comparing input password with bcrypt password
+            //Compare input password with bcrypt password
             const isMatched = await bcrypt.compare(password, user.password);
 
-            console.log("Is matched ", isMatched)//true, 
             if (!isMatched) {
                 return {
                     success: false,
@@ -89,10 +84,9 @@ export const AuthService = {
                     statusCode: 404,
                 };
             } else {
-                //if isMatched is true, 
+
                 //we will be using jwt here. 
                 const secret = config.jwtSecret as string;
-                // console.log("Secret ", secret);
 
                 //create the token
                 const token = jwt.sign(
@@ -108,7 +102,6 @@ export const AuthService = {
                 );
 
                 const { password: _password, ...withoutPsw } = user;
-
 
                 return {
                     success: true,

@@ -1,4 +1,4 @@
-//this file handles try/catch automatically so that i dont need to write eveyrytime
+//This file handles try/catch automatically so that we dont need to write eveyrytime
 
 import { NextFunction, Request, Response } from "express";
 
