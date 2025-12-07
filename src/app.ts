@@ -30,4 +30,13 @@ app.use("/api/v1/bookings", BookingRouter);
 
 app.use("/api/v1/auth/", AuthRouter);
 
+// 404 route
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: "Route not found",
+        path: req.path,
+    });
+});
+
 export default app;
