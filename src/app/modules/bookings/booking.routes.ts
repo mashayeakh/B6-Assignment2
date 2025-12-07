@@ -5,7 +5,11 @@ import { AuthMiddleware } from "../../middleware/auth";
 const router = Router();
 
 // router.get("/test", BookingController.test);
-router.post("/", AuthMiddleware.auth("admin", "customer"), BookingController.createBooking);
-router.get("/", AuthMiddleware.auth("admin", "customer"), BookingController.getAllVehicle);
+router.post("/", AuthMiddleware.auth("admin", "customer"), BookingController.createBooking);//admin or customer
+
+router.get("/", AuthMiddleware.auth("admin", "customer"), BookingController.getAllVehicle); //both roles
+
+router.put("/:bookingId", AuthMiddleware.auth("customer", "admin"), BookingController.updateVehicle); //both roles
+
 
 export const BookingRouter = router;

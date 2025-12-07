@@ -298,15 +298,111 @@ export const BookingService = {
 
         } catch (error: any) {
             console.error("Error fetching bookings:", error);
-            return res.status(500).json({
+            return {
                 success: false,
                 message: error.message || "Something went wrong"
-            });
+            };
+        }
+    },
+
+    async updateBooking(bookingId: number, user: any, payload: any) {
+
+        try {
+            const role = user?.role?.toLowerCase();
+            const currDate = new Date();
+
+            // Get booking details
+            const bookingResult = await pool.query(
+                `SELECT * FROM bookings WHERE id=$1`,
+                [bookingId]
+            );
+
+            if (bookingResult.rowCount === 0) {
+                return { success: false, message: "Booking not found" };
+            }
+
+            const booking = bookingResult.rows[0];
+            const startDate = new Date(booking.rent_start_date);
+            const endDate = new Date(booking.rent_end_date);
+
+            // Days difference for reference
+            const diffDays = Math.floor((currDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+            console.log("Days difference:", diffDays);
+
+            // CUSTOMER: Cancel booking (before start date)
+            if (role === "customer") {
+                if (currDate < startDate) {
+                    const response = await pool.query(
+                        `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
+                        ['cancelled', bookingId]
+                    );
+                    return {
+                        success: true,
+                        message: "Booking cancelled successfully",
+                        data: response.rows[0]
+                    };
+                } else {
+                    return {
+                        success: false,
+                        message: "Cannot cancel booking after start date"
+                    };
+                }
+            }
+
+            // ADMIN: Mark as returned (only after end date)
+            if (role === "admin") {
+                if (currDate >= endDate) {
+                    const response = await pool.query(
+                        `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
+                        ['returned', bookingId]
+                    );
+
+                    // Update vehicle availability to "available"
+                    await pool.query(
+                        `UPDATE vehicles SET availability_status=$1 WHERE id=$2`,
+                        ['available', booking.vehicle_id]
+                    );
+
+                    return {
+                        success: true,
+                        message: "Booking marked as returned by admin",
+                        data: response.rows[0]
+                    };
+                } else {
+                    return {
+                        success: false,
+                        message: "Cannot mark as returned before rental end date"
+                    };
+                }
+            }
+
+            // SYSTEM: Auto-mark as returned if rental period ends
+            //status cant be returned, currDate must be greater or equal to endDate
+            if (currDate >= endDate && booking.status !== "returned") {
+                const response = await pool.query(
+                    `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
+                    ['returned', bookingId]
+                );
+
+                await pool.query(
+                    `UPDATE vehicles SET availability_status=$1 WHERE id=$2`,
+                    ['available', booking.vehicle_id]
+                );
+
+                return {
+                    success: true,
+                    message: "Booking auto-marked as returned",
+                    data: response.rows[0]
+                };
+            }
+
+        } catch (error: any) {
+            console.error("Error fetching bookings:", error);
+            return {
+                success: false,
+                message: error.message || "Something went wrong"
+            };
         }
     }
-
-
-
-
 
 }

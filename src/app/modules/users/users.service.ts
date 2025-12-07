@@ -9,71 +9,7 @@ export const UserService = {
         }
     },
 
-    async createDemoUser(payload: any) {
-        try {
-            const { name, email, password, phone, role } = payload;
 
-            console.log({ "payload data from body ": payload })
-
-            //insert values into user table
-            const insertion = await pool.query(
-                `
-                INSERT INTO Users (name, email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *
-                `, [name, email, password, phone, role]
-            )
-
-            console.log("Respoine ", insertion)
-            if (insertion.rowCount !== 1) {
-                return {
-                    success: false,
-                    message: "Bad Request",
-                    // data: insertion.rows[0],
-                    statusCode: 400,
-                }
-            }
-
-            return {
-                success: true,
-                message: "User created successfully",
-                data: insertion.rows[0],
-                statusCode: 201,
-            }
-        } catch (error: any) {
-
-            //checking duplicate email with code 23505
-            if (error.code === "23505") {
-                return {
-                    success: false,
-                    message: "Email already exists",
-                    statusCode: 400
-                }
-            }
-
-            //email lowercase constraint/issue
-            if (error.constraint === "email_lower_check") {
-                return {
-                    success: false,
-                    message: "Email must be lowercase",
-                    statusCode: 400
-                }
-            }
-
-            //password length issue
-            if (error.constraint === "users_password_check") {
-                return {
-                    success: false,
-                    message: "Password must be at least 6 characters",
-                    statusCode: 400
-                }
-            }
-
-            return {
-                success: false,
-                statusCode: 400,
-                message: error.message || "Something went wrong"
-            }
-        }
-    },
 
     //get all user - admin access
     async getAllUser() {
@@ -95,6 +31,43 @@ export const UserService = {
             message: "Users retrieved successfully",
             data: finalVal,
         }
+    },
+
+
+    //update user
+    async updateUser(id: number, user: any, payload: any) {
+
+        const { name, email, phone, role } = payload;
+
+        const loggedInUser = user?.role?.toLowerCase();
+        const loggedInUserId = user?.id;
+
+        if (loggedInUser === "customer" && loggedInUserId !== id) {
+            return {
+                success: false,
+                message: "Customers can only update their own profile"
+            };
+        }
+
+        console.log("calling from update user ----", payload)
+        const response = await pool.query(
+            `UPDATE users SET name=$1, email=$2, phone=$3, role=$4 WHERE id=$5 RETURNING *`, [name, email, phone, role, id]
+        );
+
+        // console.log("UUAWE ", response.rows[0].name)
+
+        const result = response?.rows;
+        const finalVal = result.map((u: any) => {
+            const { password, ...withoutResult } = u;
+            return withoutResult;
+        })
+
+
+        return {
+            success: true,
+            message: "User updated successfully",
+            data: finalVal,
+        };
     },
 
     //delete user using id - admin access

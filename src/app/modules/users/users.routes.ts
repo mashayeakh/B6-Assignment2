@@ -5,8 +5,16 @@ import { AuthMiddleware } from "../../middleware/auth";
 const router = Router();
 
 // router.get("/", UserController.test);
-router.post("/", UserController.createUser);
+// router.post("/", UserController.createUser);
+
+
+
+
 router.get("/", AuthMiddleware.auth("admin"), UserController.getAllUsers);
-router.delete("/:id", AuthMiddleware.auth("admin"), UserController.deleteUser);
+
+router.put("/:userId", AuthMiddleware.auth("admin", "customer"), UserController.updateUser);
+
+router.delete("/:userId", AuthMiddleware.auth("admin"), UserController.deleteUser);
+
 
 export const UserRouter = router;
