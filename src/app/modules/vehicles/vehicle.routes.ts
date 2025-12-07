@@ -4,7 +4,6 @@ import { AuthMiddleware } from './../../middleware/auth';
 
 const router = Router();
 
-router.get("/test", VehicleController.test);
 
 router.post("/", AuthMiddleware.auth("admin"), VehicleController.createVehicle);//only admin
 

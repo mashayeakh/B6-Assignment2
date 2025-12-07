@@ -1,14 +1,6 @@
 import { pool } from "../../config/db";
 
 export const UserService = {
-    async test() {
-        return {
-            success: "true",
-            message: "hello, testing 1,2,3....",
-            statusCode: 200
-        }
-    },
-
 
     //get all user - admin access
     async getAllUser() {
@@ -81,7 +73,7 @@ export const UserService = {
                 statusCode: 404
             }
         }
-        
+
         return {
             success: true,
             message: "User deleted successfully"

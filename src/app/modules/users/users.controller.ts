@@ -3,10 +3,6 @@ import { UserService } from "./users.service";
 import { catchAsync } from "../../middleware/catchAsync";
 
 export const UserController = {
-    async test(req: Request, res: Response) {
-        const result = await UserService.test();
-        res.status(result.statusCode).json(result)
-    },
 
 
     getAllUsers: catchAsync(async (req, res) => {

@@ -210,7 +210,6 @@ export const BookingService = {
 
     async getAllBookings(req: Request, res: Response) {
         try {
-            // Check user role from JWT
             const userRole = req.user?.role;
             const userId = req.user?.id;
 
@@ -221,15 +220,22 @@ export const BookingService = {
                 });
             }
 
+            // CUSTOMER VIEW
             if (userRole === "customer") {
-                // Customer view: only their bookings
                 const bookingsResult = await pool.query(
                     `SELECT 
-                    b.id, b.vehicle_id, b.rent_start_date, b.rent_end_date, b.total_price, b.status,
-                    v.vehicle_name, v.registration_number, v.type AS vehicle_type
-                 FROM bookings b
-                 JOIN vehicles v ON b.vehicle_id = v.id
-                 WHERE b.customer_id = $1`,
+                    b.id, 
+                    b.vehicle_id, 
+                    TO_CHAR(b.rent_start_date, 'YYYY-MM-DD') AS rent_start_date,
+                    TO_CHAR(b.rent_end_date, 'YYYY-MM-DD') AS rent_end_date,
+                    b.total_price, 
+                    b.status,
+                    v.vehicle_name, 
+                    v.registration_number, 
+                    v.type AS vehicle_type
+                FROM bookings b
+                JOIN vehicles v ON b.vehicle_id = v.id
+                WHERE b.customer_id = $1`,
                     [userId]
                 );
 
@@ -252,16 +258,28 @@ export const BookingService = {
                     message: "Your bookings retrieved successfully",
                     data
                 });
-            } else if (userRole === "admin") {
-                // Admin view: all bookings
+            }
+
+            // ADMIN VIEW
+            if (userRole === "admin") {
                 const bookingsResult = await pool.query(
                     `SELECT 
-                    b.id, b.customer_id, b.vehicle_id, b.rent_start_date, b.rent_end_date, b.total_price, b.status,
-                    u.name AS customer_name, u.email AS customer_email, u.role AS customer_role,
-                    v.vehicle_name, v.registration_number, v.type AS vehicle_type
-                 FROM bookings b
-                 JOIN users u ON b.customer_id = u.id
-                 JOIN vehicles v ON b.vehicle_id = v.id`
+                    b.id, 
+                    b.customer_id, 
+                    b.vehicle_id,
+                    TO_CHAR(b.rent_start_date, 'YYYY-MM-DD') AS rent_start_date,
+                    TO_CHAR(b.rent_end_date, 'YYYY-MM-DD') AS rent_end_date,
+                    b.total_price, 
+                    b.status,
+                    u.name AS customer_name, 
+                    u.email AS customer_email,
+                    v.vehicle_name, 
+                    v.registration_number,
+                    v.type AS vehicle_type
+                FROM bookings b
+                JOIN users u ON b.customer_id = u.id
+                JOIN vehicles v ON b.vehicle_id = v.id
+                ORDER BY b.id ASC`
                 );
 
                 const data = bookingsResult.rows.map(row => ({
@@ -274,135 +292,184 @@ export const BookingService = {
                     status: row.status,
                     customer: {
                         name: row.customer_name,
-                        email: row.customer_email,
-                        role: row.customer_role
+                        email: row.customer_email
                     },
                     vehicle: {
                         vehicle_name: row.vehicle_name,
-                        registration_number: row.registration_number,
-                        type: row.vehicle_type
+                        registration_number: row.registration_number
                     }
                 }));
 
                 return res.status(200).json({
                     success: true,
-                    message: "All bookings retrieved successfully",
+                    message: "Bookings retrieved successfully",
                     data
-                });
-            } else {
-                return res.status(403).json({
-                    success: false,
-                    message: "Role not authorized"
                 });
             }
 
+            return res.status(403).json({
+                success: false,
+                message: "Role not authorized"
+            });
+
         } catch (error: any) {
             console.error("Error fetching bookings:", error);
-            return {
+            return res.status(500).json({
                 success: false,
                 message: error.message || "Something went wrong"
-            };
+            });
         }
     },
 
+
+
     async updateBooking(bookingId: number, user: any, payload: any) {
+        const client = await pool.connect();
 
         try {
             const role = user?.role?.toLowerCase();
-            const currDate = new Date();
+            const newStatus = payload?.status;
+            const userId = user?.id;
 
-            // Get booking details
-            const bookingResult = await pool.query(
+            // 1. Get booking
+            const bookingRes = await client.query(
                 `SELECT * FROM bookings WHERE id=$1`,
                 [bookingId]
             );
 
-            if (bookingResult.rowCount === 0) {
-                return { success: false, message: "Booking not found" };
+            if (!bookingRes.rows.length) {
+                return {
+                    success: false,
+                    message: "Booking not found"
+                };
             }
 
-            const booking = bookingResult.rows[0];
+            const booking = bookingRes.rows[0];
+
+            const currDate = new Date();
             const startDate = new Date(booking.rent_start_date);
             const endDate = new Date(booking.rent_end_date);
 
-            // Days difference for reference
-            const diffDays = Math.floor((currDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-            console.log("Days difference:", diffDays);
+            // -----------------------------------------------------------
+            // AUTO-RETURN LOGIC (System)
+            // -----------------------------------------------------------
+            if (currDate >= endDate && booking.status !== "returned") {
+                const updatedBooking = await client.query(
+                    `UPDATE bookings SET status='returned' WHERE id=$1 RETURNING *`,
+                    [bookingId]
+                );
 
-            // CUSTOMER: Cancel booking (before start date)
+                await client.query(
+                    `UPDATE vehicles SET availability_status='available' WHERE id=$1`,
+                    [booking.vehicle_id]
+                );
+
+                return {
+                    success: true,
+                    message: "Booking auto-marked as returned. Vehicle is now available",
+                    data: {
+                        ...updatedBooking.rows[0],
+                        vehicle: {
+                            availability_status: "available"
+                        }
+                    }
+                };
+            }
+
+            // -----------------------------------------------------------
+            // CUSTOMER LOGIC
+            // -----------------------------------------------------------
             if (role === "customer") {
-                if (currDate < startDate) {
-                    const response = await pool.query(
-                        `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
-                        ['cancelled', bookingId]
-                    );
+                if (booking.customer_id !== userId) {
                     return {
-                        success: true,
-                        message: "Booking cancelled successfully",
-                        data: response.rows[0]
+                        success: false,
+                        message: "You are not authorized to update this booking"
                     };
-                } else {
+                }
+
+                if (newStatus !== "cancelled") {
+                    return {
+                        success: false,
+                        message: "Invalid status update for customer"
+                    };
+                }
+
+                if (currDate >= startDate) {
                     return {
                         success: false,
                         message: "Cannot cancel booking after start date"
                     };
                 }
+
+                const updatedBooking = await client.query(
+                    `UPDATE bookings SET status='cancelled' WHERE id=$1 RETURNING *`,
+                    [bookingId]
+                );
+
+                return {
+                    success: true,
+                    message: "Booking cancelled successfully",
+                    data: updatedBooking.rows[0]
+                };
             }
 
-            // ADMIN: Mark as returned (only after end date)
+            // -----------------------------------------------------------
+            // ADMIN LOGIC
+            // -----------------------------------------------------------
             if (role === "admin") {
-                if (currDate >= endDate) {
-                    const response = await pool.query(
-                        `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
-                        ['returned', bookingId]
-                    );
-
-                    // Update vehicle availability to "available"
-                    await pool.query(
-                        `UPDATE vehicles SET availability_status=$1 WHERE id=$2`,
-                        ['available', booking.vehicle_id]
-                    );
-
+                if (newStatus !== "returned") {
                     return {
-                        success: true,
-                        message: "Booking marked as returned by admin",
-                        data: response.rows[0]
+                        success: false,
+                        message: "Invalid status update for admin"
                     };
-                } else {
+                }
+
+                if (currDate < endDate) {
                     return {
                         success: false,
                         message: "Cannot mark as returned before rental end date"
                     };
                 }
-            }
 
-            // SYSTEM: Auto-mark as returned if rental period ends
-            //status cant be returned, currDate must be greater or equal to endDate
-            if (currDate >= endDate && booking.status !== "returned") {
-                const response = await pool.query(
-                    `UPDATE bookings SET status=$1 WHERE id=$2 RETURNING *`,
-                    ['returned', bookingId]
+                const updatedBooking = await client.query(
+                    `UPDATE bookings SET status='returned' WHERE id=$1 RETURNING *`,
+                    [bookingId]
                 );
 
-                await pool.query(
-                    `UPDATE vehicles SET availability_status=$1 WHERE id=$2`,
-                    ['available', booking.vehicle_id]
+                await client.query(
+                    `UPDATE vehicles SET availability_status='available' WHERE id=$1`,
+                    [booking.vehicle_id]
                 );
 
                 return {
                     success: true,
-                    message: "Booking auto-marked as returned",
-                    data: response.rows[0]
+                    message: "Booking marked as returned. Vehicle is now available",
+                    data: {
+                        ...updatedBooking.rows[0],
+                        vehicle: {
+                            availability_status: "available"
+                        }
+                    }
                 };
             }
 
-        } catch (error: any) {
-            console.error("Error fetching bookings:", error);
+            // -----------------------------------------------------------
+            // NO ROLE MATCH
+            // -----------------------------------------------------------
             return {
                 success: false,
-                message: error.message || "Something went wrong"
+                message: "You are not allowed to perform this action"
             };
+
+        } catch (error: any) {
+            return {
+                success: false,
+                message: error.message
+            };
+        } finally {
+            client.release();
         }
     }
+
 
 }

@@ -3,10 +3,6 @@ import { AuthService } from "./auth.service";
 import { catchAsync } from "../middleware/catchAsync";
 
 export const AuthController = {
-    async test(req: Request, res: Response) {
-        const result = await AuthService.test();
-        res.status(result.statusCode).json(result)
-    },
 
     //signup
 

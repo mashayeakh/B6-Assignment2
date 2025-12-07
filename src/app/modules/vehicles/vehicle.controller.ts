@@ -8,12 +8,6 @@ import { catchAsync } from "../../middleware/catchAsync";
 
 export const VehicleController = {
 
-    test: catchAsync(async (req, res) => {
-        const result = await VehicleService.test();
-        res.status(result.statusCode).json(result)
-    }),
-
-
     createVehicle: catchAsync(async (req, res) => {
         const result = await VehicleService.createVehicle(req.body);
         res.status(201).json(result);

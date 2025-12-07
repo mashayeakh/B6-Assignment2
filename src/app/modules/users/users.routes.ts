@@ -4,11 +4,6 @@ import { AuthMiddleware } from "../../middleware/auth";
 
 const router = Router();
 
-// router.get("/", UserController.test);
-// router.post("/", UserController.createUser);
-
-
-
 
 router.get("/", AuthMiddleware.auth("admin"), UserController.getAllUsers);//admin access
 

@@ -6,79 +6,52 @@ import jwt from "jsonwebtoken"
 
 
 export const AuthService = {
-    async test() {
-        return {
-            success: "true",
-            message: "hello, testing 1,2,3....",
-            statusCode: 200
-        }
-    },
 
     //signup
     async userSignup(payload: any) {
-
         try {
-            // console.log("Payload from user signup ", payload);
-
-            //calling the validate signup to return msgs
+            // Validate payload
             const validate = validateSignup(payload);
-            if (!validate.success === true) {
-                return validate;
-            }
+            if (!validate.success) return validate;
 
-            else {
+            const { name, email, password, phone, role } = payload;
 
-                const { name, email, password, phone, role } = payload;
-
-                //bcrypt the password
-                const hashedPsw = await bcrypt.hash(password, 10)
-
-                //insert into user table. 
-                const result = await pool.query(
-                    `
-                    INSERT INTO users (name ,email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *
-                    `, [name, email, hashedPsw, phone, role]
-                )
-
-
-                console.log("Result", result.rows[0])
-
-                const fromDB: any = result.rows[0];
-
-                //getting everything without password. 
-                console.log(fromDB.name)
-
-                //discarding the password
-                const { password: _password, ...withoutPsw } = fromDB;
-
-                // console.log("data ", withourPwd)
-                // console.log("data ", _password)
-
-                return {
-                    success: true,
-                    message: "User registered successfully",
-                    data: withoutPsw
-                }
-            }
-
-        } catch (error: any) {
-
-            //checking duplicate email with code 23505
-            if (error.code === "23505") {
+            // Pre-check if email exists
+            const existingUser = await pool.query(`SELECT id FROM users WHERE email=$1`, [email]);
+            if (existingUser.rowCount! > 0) {
                 return {
                     success: false,
                     message: "Email already exists",
                     statusCode: 400
-                }
+                };
             }
 
+            // Hash the password
+            const hashedPsw = await bcrypt.hash(password, 10);
+
+            // Insert user
+            const result = await pool.query(
+                `INSERT INTO users (name, email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+                [name, email, hashedPsw, phone, role]
+            );
+
+            const fromDB = result.rows[0];
+            const { password: _password, ...withoutPsw } = fromDB;
+
+            return {
+                success: true,
+                message: "User registered successfully",
+                data: withoutPsw
+            };
+
+        } catch (error: any) {
+            console.error("Error during signup:", error);
             return {
                 success: false,
                 statusCode: 500,
                 message: error.message || "Something went wrong"
-            }
+            };
         }
-
     },
 
 

@@ -1,84 +1,77 @@
 import { pool } from "../../config/db";
+import { validateVehicle } from "../../middleware/validateVehicle";
 
 export const VehicleService = {
-    async test() {
-        return {
-            success: "true",
-            message: "hello, testing 1,2,3....",
-            statusCode: 200
-        }
-    },
 
     //create vehicle - admin access
     async createVehicle(payload: any) {
         try {
+            // 1. Validate payload
+            const validation = validateVehicle(payload);
+            if (!validation.success) return validation;
 
             const { vehicle_name, type, registration_number, daily_rent_price, availability_status } = payload;
 
-            // console.log({ "payload data from body ": payload })
+            // 2. Check if registration_number already exists
+            const existingVehicle = await pool.query<{ id: number }>(
+                `SELECT id FROM vehicles WHERE registration_number = $1`,
+                [registration_number]
+            );
 
-            //insert values into user table
+            if (existingVehicle.rowCount! > 0) {
+                return {
+                    success: false,
+                    message: "Vehicle with this registration number already exists",
+                    statusCode: 400
+                };
+            }
+
+            // 3. Insert new vehicle
             const insertion = await pool.query(
-                `
-                INSERT INTO Vehicles (vehicle_name, type, registration_number, daily_rent_price, availability_status) VALUES ($1, $2, $3, $4, $5) RETURNING *
-                `, [vehicle_name, type, registration_number, daily_rent_price, availability_status]
-            )
-
-            // console.log("Respoine ", insertion)
+                `INSERT INTO Vehicles 
+                (vehicle_name, type, registration_number, daily_rent_price, availability_status) 
+                VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+                [vehicle_name, type, registration_number, daily_rent_price, availability_status]
+            );
 
             return {
                 success: true,
-                "message": "Vehicle created successfully",
+                message: "Vehicle created successfully",
                 data: insertion.rows[0],
-            }
+            };
+
         } catch (error: any) {
-
-            // console.log("Err ", error)
-
-            //if any require field is missing - (23502)
+            // Required field missing
             if (error.code === "23502") {
-                console.log("ERRR ", error?.column)
                 return {
                     success: false,
                     message: `${error?.column} is missing`,
                     statusCode: 400
-                }
+                };
             }
 
-            //unique value issue. - (23505)
-            if (error.code === "23505") {
-                return {
-                    success: false,
-                    message: `registration_number already exist`,
-                    statusCode: 400
-                }
-            }
-            //constraint check
+            // DB constraint errors
             if (error.code === "23514") {
-                console.log("ERR ", error)
-                //type issue
                 if (error.constraint === "vehicle_type_check") {
                     return {
                         success: false,
                         message: `Type must be one of: car, bike, van, SUV`,
                         statusCode: 400,
-                    }
+                    };
                 }
-                //status check
                 if (error.constraint === "status_check") {
                     return {
                         success: false,
                         message: `Availability status must be 'available' or 'booked'`,
                         statusCode: 400,
-                    }
+                    };
                 }
-                //price positive check
                 if (error.constraint === "price_positive_check") {
                     return {
                         success: false,
                         message: `Daily rent price must be greater than 0`,
                         statusCode: 400
-                    }
+                    };
                 }
             }
 
@@ -86,7 +79,7 @@ export const VehicleService = {
                 success: false,
                 statusCode: 500,
                 message: error.message || "Something went wrong"
-            }
+            };
         }
     },
 

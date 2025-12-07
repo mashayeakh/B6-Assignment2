@@ -4,10 +4,7 @@ import { json } from "stream/consumers";
 import { catchAsync } from "../../middleware/catchAsync";
 
 export const BookingController = {
-    async test(req: Request, res: Response) {
-        const result = await BookingService.test();
-        res.status(result.statusCode).json(result)
-    },
+
 
     createBooking: catchAsync(async (req, res) => {
         const result = await BookingService.createBooking(req.body);
